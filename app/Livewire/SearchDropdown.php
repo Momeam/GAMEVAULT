@@ -2,13 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Services\IgdbGameCatalog;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 class SearchDropdown extends Component
 {
+    protected IgdbGameCatalog $catalog;
+
     public string $search = '';
+
+    public function boot(IgdbGameCatalog $catalog): void
+    {
+        $this->catalog = $catalog;
+    }
 
     public function clearSearch(): void
     {
@@ -17,26 +24,17 @@ class SearchDropdown extends Component
 
     public function render(): View
     {
-        $search = Str::lower(trim($this->search));
+        $search = trim($this->search);
+        $igdbConfigured = filled(config('services.twitch.client_id'))
+            && filled(config('services.twitch.client_secret'));
 
-        $games = mb_strlen($search) < 2
+        $games = mb_strlen($search) < 2 || ! $igdbConfigured
             ? collect()
-            : collect(config('game_catalog'))
-                ->filter(function (array $game) use ($search): bool {
-                    $searchableText = Str::lower(implode(' ', [
-                        $game['name'],
-                        ...$game['genres'],
-                        ...$game['platforms'],
-                        ...$game['keywords'],
-                    ]));
-
-                    return Str::contains($searchableText, $search);
-                })
-                ->take(5)
-                ->values();
+            : $this->catalog->search($search);
 
         return view('livewire.search-dropdown', [
             'games' => $games,
+            'igdbConfigured' => $igdbConfigured,
         ]);
     }
 }

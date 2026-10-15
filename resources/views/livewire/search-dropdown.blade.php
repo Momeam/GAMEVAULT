@@ -32,30 +32,38 @@
         >
             @if (mb_strlen(trim($search)) < 2)
                 <p class="px-4 py-3 text-gray-400">Type at least 2 characters to search.</p>
+            @elseif (! $igdbConfigured)
+                <p class="px-4 py-3 text-gray-400">Add your Twitch credentials to .env to search IGDB.</p>
             @elseif ($games->isEmpty())
                 <p class="px-4 py-3 text-gray-400">No games found for “{{ $search }}”.</p>
             @else
                 <ul role="listbox" aria-label="Game search results">
                     @foreach ($games as $game)
-                        <li wire:key="search-result-{{ $game['steam_id'] }}" role="option" aria-selected="false" class="border-b border-white/5 last:border-b-0">
+                        <li wire:key="search-result-{{ $game['id'] }}" role="option" aria-selected="false" class="border-b border-white/5 last:border-b-0">
                             <a
-                                href="https://store.steampowered.com/app/{{ $game['steam_id'] }}/"
+                                href="{{ $game['url'] }}"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 class="flex items-center gap-3 px-3 py-2.5 transition hover:bg-gray-800 focus:bg-gray-800 focus:outline-none"
                                 x-on:click="isOpen = false"
                             >
-                                <img
-                                    src="https://cdn.akamai.steamstatic.com/steam/apps/{{ $game['steam_id'] }}/library_600x900_2x.jpg"
-                                    alt=""
-                                    loading="lazy"
-                                    class="h-12 w-9 rounded-md bg-gray-800 object-cover"
-                                >
+                                @if ($game['cover_url'])
+                                    <img
+                                        src="{{ $game['cover_url'] }}"
+                                        alt=""
+                                        loading="lazy"
+                                        class="h-12 w-9 rounded-md bg-gray-800 object-cover"
+                                    >
+                                @else
+                                    <span class="flex h-12 w-9 shrink-0 items-center justify-center rounded-md bg-gray-800 text-[10px] text-gray-500">No art</span>
+                                @endif
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate font-semibold text-gray-100">{{ $game['name'] }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-gray-500">{{ implode(' · ', $game['genres']) }}</span>
                                 </span>
-                                <span class="shrink-0 text-xs font-semibold text-emerald-300">★ {{ $game['rating'] }}</span>
+                                @if ($game['rating'])
+                                    <span class="shrink-0 text-xs font-semibold text-emerald-300">★ {{ $game['rating'] }}</span>
+                                @endif
                             </a>
                         </li>
                     @endforeach
